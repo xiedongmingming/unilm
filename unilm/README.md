@@ -1,15 +1,17 @@
-# UniLM
-**Unified pre-training for language understanding (NLU) and generation (NLG)**
+# unilm
+**unified pre-training for language understanding (nlu) and generation (nlg)**
 
-Update (June, 2020): [UniLMv2: Pseudo-Masked Language Models for Unified Language Model Pre-Training](https://arxiv.org/abs/2002.12804) was accepted by ICML 2020.
+语言理解(NLU)和生成(NLG)的统一预训练
 
-**UniLM v2** ```New``` (February, 2020): "[UniLMv2: Pseudo-Masked Language Models for Unified Language Model Pre-Training](https://arxiv.org/abs/2002.12804)".
+update (june, 2020): [unilmv2: pseudo-masked language models for unified language model pre-training](https://arxiv.org/abs/2002.12804) was accepted by icml 2020.
 
-**[UniLM v1](https://github.com/microsoft/unilm/tree/master/unilm-v1)** (September 30th, 2019): the code and pre-trained models for the NeurIPS 2019 paper entitled "[Unified Language Model Pre-training for Natural Language Understanding and Generation](https://arxiv.org/abs/1905.03197)".
+**unilm v2** ```new``` (february, 2020): "[unilmv2: pseudo-masked language models for unified language model pre-training](https://arxiv.org/abs/2002.12804)".
 
-## Citation
+**[unilm v1](https://github.com/microsoft/unilm/tree/master/unilm-v1)** (september 30th, 2019): the code and pre-trained models for the neurips 2019 paper entitled "[unified language model pre-training for natural language understanding and generation](https://arxiv.org/abs/1905.03197)".
 
-If you find UniLM useful in your work, you can cite the following paper:
+## citation
+
+if you find unilm useful in your work, you can cite the following paper:
 ```
 @inproceedings{unilmv2,
     title={UniLMv2: Pseudo-Masked Language Models for Unified Language Model Pre-Training},
@@ -19,17 +21,17 @@ If you find UniLM useful in your work, you can cite the following paper:
 }
 ```
 
-## Acknowledgments
-Our code is based on [pytorch-transformers v0.4.0](https://github.com/huggingface/pytorch-transformers/tree/v0.4.0). We thank the authors for their wonderful open-source efforts.
+## acknowledgments
+our code is based on [pytorch-transformers v0.4.0](https://github.com/huggingface/pytorch-transformers/tree/v0.4.0). we thank the authors for their wonderful open-source efforts.
 
-## License
-This project is licensed under the license found in the LICENSE file in the root directory of this source tree.
-Portions of the source code are based on the [pytorch-transformers v0.4.0](https://github.com/huggingface/pytorch-transformers/tree/v0.4.0) project.
+## license
+this project is licensed under the license found in the license file in the root directory of this source tree.
+portions of the source code are based on the [pytorch-transformers v0.4.0](https://github.com/huggingface/pytorch-transformers/tree/v0.4.0) project.
 
-[Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct)
+[microsoft open source code of conduct](https://opensource.microsoft.com/codeofconduct)
 
-### Contact Information
+### contact Information
 
-For help or issues using UniLM, please submit a GitHub issue.
+for help or issues using unilm, please submit a github issue.
 
-For other communications related to UniLM, please contact Li Dong (`lidong1@microsoft.com`), Furu Wei (`fuwei@microsoft.com`).
+for other communications related to unilm, please contact li dong (`lidong1@microsoft.com`), furu wei (`fuwei@microsoft.com`).

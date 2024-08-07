@@ -1,24 +1,22 @@
-# UniLM
-**Unified pre-training for natural language understanding (NLU) and generation (NLG)**
+# unilm
+**unified pre-training for natural language understanding (nlu) and generation (nlg)**
 
+**```update: ```** **check out the latest information and models of unilm at [https://github.com/microsoft/unilm/tree/master/unilm](https://github.com/microsoft/unilm/tree/master/unilm)**
 
-**```Update: ```** **Check out the latest information and models of UniLM at [https://github.com/microsoft/unilm/tree/master/unilm](https://github.com/microsoft/unilm/tree/master/unilm)**
+**\*\*\*\*\* october 1st, 2019: unilm v1 release \*\*\*\*\***
 
+**unilm v1** (september 30th, 2019): the code and pre-trained models for the neurips 2019 paper entitled "[unified language model pre-training for natural language understanding and generation](https://arxiv.org/abs/1905.03197)". unilm (v1) achieves the **new sota results** in **nlg** (especially **sequence-to-sequence generation**) tasks/benchmarks, including abstractive summarization (the gigaword and cnn/dm dataset), question generation (the squad qg dataset), etc. 
 
-**\*\*\*\*\* October 1st, 2019: UniLM v1 release \*\*\*\*\***
+## environment
 
-**UniLM v1** (September 30th, 2019): the code and pre-trained models for the NeurIPS 2019 paper entitled "[Unified Language Model Pre-training for Natural Language Understanding and Generation](https://arxiv.org/abs/1905.03197)". UniLM (v1) achieves the **new SOTA results** in **NLG** (especially **sequence-to-sequence generation**) tasks/benchmarks, including abstractive summarization (the Gigaword and CNN/DM dataset), question generation (the SQuAD QG dataset), etc. 
+### docker
 
-## Environment
-
-### Docker
-
-The recommended way to run the code is using docker under Linux:
+the recommended way to run the code is using docker under linux:
 ```bash
 alias=`whoami | cut -d'.' -f2`; docker run -it --rm --runtime=nvidia --ipc=host --privileged -v /home/${alias}:/home/${alias} pytorch/pytorch:1.1.0-cuda10.0-cudnn7.5-devel bash
 ```
 
-The docker is initialized by:
+the docker is initialized by:
 ```bash
 . .bashrc
 apt-get update
@@ -26,19 +24,22 @@ apt-get install -y vim wget ssh
 
 PWD_DIR=$(pwd)
 cd $(mktemp -d)
+
 git clone -q https://github.com/NVIDIA/apex.git
 cd apex
 git reset --hard 1603407bf49c7fc3da74fceb6a6c7b47fece2ef8
+
 python setup.py install --user --cuda_ext --cpp_ext
+
 cd $PWD_DIR
 
 pip install --user tensorboardX six numpy tqdm path.py pandas scikit-learn lmdb pyarrow py-lz4framed methodtools py-rouge pyrouge nltk
 python -c "import nltk; nltk.download('punkt')"
 pip install -e git://github.com/Maluuba/nlg-eval.git#egg=nlg-eval
 ```
-The mixed-precision training code requires the specific version of [NVIDIA/apex](https://github.com/NVIDIA/apex/tree/1603407bf49c7fc3da74fceb6a6c7b47fece2ef8), which only supports pytorch<1.2.0.
+the mixed-precision training code requires the specific version of [nvidia/apex](https://github.com/NVIDIA/apex/tree/1603407bf49c7fc3da74fceb6a6c7b47fece2ef8), which only supports pytorch<1.2.0.
 
-Install the repo as a package in the docker:
+install the repo as a package in the docker:
 ```bash
 mkdir ~/code; cd ~/code
 git clone https://github.com/microsoft/unilm.git
@@ -46,14 +47,14 @@ cd ~/code/unilm/unilm-v1/src
 pip install --user --editable .
 ```
 
-## Pre-trained Models
-We release both base-size and large-size **cased** UniLM models pre-trained with **Wikipedia and BookCorpus** corpora. The models are trained by using the same model configuration and WordPiece vocabulary as BERT. The model parameters can be loaded as in the fine-tuning code.
+## pre-trained models
+we release both base-size and large-size **cased** unilm models pre-trained with **wikipedia and bookcorpus** corpora. the models are trained by using the same model configuration and wordpiece vocabulary as bert. the model parameters can be loaded as in the fine-tuning code.
 
-The links to the pre-trained models:
+the links to the pre-trained models:
 - [unilm1-large-cased](https://unilm.blob.core.windows.net/ckpt/unilm1-large-cased.bin): 24-layer, 1024-hidden, 16-heads, 340M parameters
 - [unilm1-base-cased](https://unilm.blob.core.windows.net/ckpt/unilm1-base-cased.bin): 12-layer, 768-hidden, 12-heads, 110M parameters
 
-## Fine-tuning
+## fine-tuning
 We provide instructions on how to fine-tune UniLM as a sequence-to-sequence model to support various downstream natural language generation tasks as follows. It is recommended to use 2 or 4 v100-32G GPU cards to fine-tune the model. Gradient accumulation (`--gradient_accumulation_steps`) can be enabled if there is an OOM error.
 
 ### Abstractive Summarization - [Gigaword](https://github.com/harvardnlp/sent-summary) (10K)

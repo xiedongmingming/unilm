@@ -1,23 +1,23 @@
-# LayoutXLM (Document Foundation Model)
-**Multimodal (text + layout/format + image) pre-training for multilingual [Document AI](https://www.microsoft.com/en-us/research/project/document-ai/)**
+# layoutxlm (document foundation model)
+**multimodal (text + layout/format + image) pre-training for multilingual [document ai](https://www.microsoft.com/en-us/research/project/document-ai/)**
 
-## Introduction
+## introduction
 
-LayoutXLM is a multimodal pre-trained model for multilingual document understanding, which aims to bridge the language barriers for visually-rich document understanding. Experiment results show that it has significantly outperformed the existing SOTA cross-lingual pre-trained models on the XFUND dataset.
+layoutxlm is a multimodal pre-trained model for multilingual document understanding, which aims to bridge the language barriers for visually-rich document understanding. experiment results show that it has significantly outperformed the existing sota cross-lingual pre-trained models on the xfund dataset.
 
-[LayoutXLM: Multimodal Pre-training for Multilingual Visually-rich Document Understanding](https://arxiv.org/abs/2104.08836)
+[layoutxlm: multimodal pre-training for multilingual visually-rich document understanding](https://arxiv.org/abs/2104.08836)
 Yiheng Xu, Tengchao Lv, Lei Cui, Guoxin Wang, Yijuan Lu, Dinei Florencio, Cha Zhang, Furu Wei, arXiv Preprint 2021
 
-## Models
+## models
 `layoutxlm-base` | [huggingface](https://huggingface.co/microsoft/layoutxlm-base)
 
-## Fine-tuning Example on [XFUND](https://github.com/doc-analysis/XFUND)
+## fine-tuning example on [xfund](https://github.com/doc-analysis/XFUND)
 
-### Installation
+### installation
 
-Please refer to [layoutlmft](../layoutlmft/README.md)
+please refer to [layoutlmft](../layoutlmft/README.md)
 
-### Fine-tuning for Semantic Entity Recognition
+### fine-tuning for semantic entity recognition
 
 ```
 cd layoutlmft
@@ -32,7 +32,7 @@ python -m torch.distributed.launch --nproc_per_node=4 examples/run_xfun_ser.py \
         --fp16
 ```
 
-### Fine-tuning for Relation Extraction
+### fine-tuning for relation extraction
 
 ```
 cd layoutlmft
@@ -48,9 +48,9 @@ python -m torch.distributed.launch --nproc_per_node=4 examples/run_xfun_re.py \
         --fp16
 ```
 
-## Results on [XFUND](https://github.com/doc-analysis/XFUND)
+## results on [xfund](https://github.com/doc-analysis/XFUND)
 
-###  Language-specific Finetuning
+###  language-specific finetuning
 
 |                             | Model              | FUNSD      | ZH         | JA         | ES         | FR         | IT         | DE         | PT         | Avg.       |
 | --------------------------- | ------------------ | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- |
@@ -60,7 +60,7 @@ python -m torch.distributed.launch --nproc_per_node=4 examples/run_xfun_re.py \
 | Relation Extraction         | `xlm-roberta-base` | 0.2659     | 0.5105     | 0.5800     | 0.5295     | 0.4965     | 0.5305     | 0.5041     | 0.3982     | 0.4769     |
 |                             | `infoxlm-base`     | 0.2920     | 0.5214     | 0.6000     | 0.5516     | 0.4913     | 0.5281     | 0.5262     | 0.4170     | 0.4910     |
 |                             | `layoutxlm-base`   | **0.5483** | **0.7073** | **0.6963** | **0.6896** | **0.6353** | **0.6415** | **0.6551** | **0.5718** | **0.6432** |
-### Zero-shot Transfer Learning
+### zero-shot transfer learning
 
 |     | Model              | FUNSD      | ZH         | JA         | ES         | FR         | IT         | DE         | PT         | Avg.       |
 | --- | ------------------ | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- | ---------- |
@@ -71,7 +71,7 @@ python -m torch.distributed.launch --nproc_per_node=4 examples/run_xfun_re.py \
 |     | `infoxlm-base`     | 0.2920     | 0.2405     | 0.2851     | 0.2481     | 0.2454     | 0.2193     | 0.2027     | 0.2049     | 0.2423     |
 |     | `layoutxlm-base`   | **0.5483** | **0.4494** | **0.4408** | **0.4708** | **0.4416** | **0.4090** | **0.3820** | **0.3685** | **0.4388** |
 
-### Multitask Fine-tuning
+### multitask fine-tuning
 
 
 
@@ -84,7 +84,7 @@ python -m torch.distributed.launch --nproc_per_node=4 examples/run_xfun_re.py \
 |     | `infoxlm-base`     | 0.3699     | 0.6493     | 0.6473     | 0.6828     | 0.6831     | 0.6690     | 0.6384     | 0.5763     | 0.6145     |
 |     | `layoutxlm-base`   | **0.6671** | **0.8241** | **0.8142** | **0.8104** | **0.8221** | **0.8310** | **0.7854** | **0.7044** | **0.7823** |
 
-## Citation
+## citation
 
 If you find LayoutXLM useful in your research, please cite the following paper:
 
@@ -99,13 +99,13 @@ If you find LayoutXLM useful in your research, please cite the following paper:
 }
 ```
 
-## License
+## license
 
-The content of this project itself is licensed under the [Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+the content of this project itself is licensed under the [Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-### Contact Information
+### contact information
 
-For help or issues using LayoutXLM, please submit a GitHub issue.
+for help or issues using layoutxlm, please submit a github issue.
 
-For other communications related to LayoutXLM, please contact Lei Cui (`lecu@microsoft.com`), Furu Wei (`fuwei@microsoft.com`).
+for other communications related to layoutxlm, please contact lei cui (`lecu@microsoft.com`), furu wei (`fuwei@microsoft.com`).
 

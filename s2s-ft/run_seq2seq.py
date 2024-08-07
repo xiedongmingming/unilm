@@ -362,213 +362,420 @@ def get_args():
     #
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument("--train_source_file", default=None, type=str, required=True,
-    #                     help="Training data contains source")
-    # parser.add_argument("--train_target_file", default=None, type=str, required=True,
-    #                     help="Training data contains target")
-    parser.add_argument("--train_file", default=None, type=str, required=True,
-                        help="Training data (json format) for training. Keys: source and target")
-    parser.add_argument("--model_type", default=None, type=str, required=True,
-                        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()))
-    parser.add_argument("--model_name_or_path", default=None, type=str, required=True,
-                        help="Path to pre-trained model or shortcut name selected in the list:")
-    parser.add_argument("--output_dir", default=None, type=str, required=True,
-                        help="The output directory where the model checkpoints and predictions will be written.")
-    parser.add_argument("--log_dir", default=None, type=str,
-                        help="The output directory where the log will be written.")
+    # parser.add_argument(
+    #       "--train_source_file",
+    #       default=None,
+    #       type=str,
+    #       required=True,
+    #       help="Training data contains source"
+    # )
+    # parser.add_argument(
+    #       "--train_target_file",
+    #       default=None,
+    #       type=str,
+    #       required=True,
+    #       help="Training data contains target"
+    # )
+    parser.add_argument(
+        "--train_file",
+        default=None,
+        type=str,
+        required=True,
+        help="Training data (json format) for training. Keys: source and target"
+    )
+    parser.add_argument(
+        "--model_type",
+        default=None,
+        type=str,
+        required=True,
+        help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys())
+    )
+    parser.add_argument(
+        "--model_name_or_path",
+        default=None,
+        type=str,
+        required=True,
+        help="Path to pre-trained model or shortcut name selected in the list:"
+    )
+    parser.add_argument(
+        "--output_dir",
+        default=None,
+        type=str,
+        required=True,
+        help="The output directory where the model checkpoints and predictions will be written."
+    )
+    parser.add_argument(
+        "--log_dir",
+        default=None,
+        type=str,
+        help="The output directory where the log will be written."
+    )
 
-    ## Other parameters
-    parser.add_argument("--config_name", default=None, type=str,
-                        help="Pretrained config name or path if not the same as model_name")
-    parser.add_argument("--tokenizer_name", default=None, type=str,
-                        help="Pretrained tokenizer name or path if not the same as model_name")
-    parser.add_argument("--cache_dir", default=None, type=str,
-                        help="Where do you want to store the pre-trained models downloaded from s3")
-
-    parser.add_argument("--max_source_seq_length", default=464, type=int,
-                        help="The maximum total source sequence length after WordPiece tokenization. Sequences "
-                             "longer than this will be truncated, and sequences shorter than this will be padded.")
-    parser.add_argument("--max_target_seq_length", default=48, type=int,
-                        help="The maximum total target sequence length after WordPiece tokenization. Sequences "
-                             "longer than this will be truncated, and sequences shorter than this will be padded.")
-
-    parser.add_argument("--cached_train_features_file", default=None, type=str,
-                        help="Cached training features file")
-    parser.add_argument("--do_lower_case", action='store_true',
-                        help="Set this flag if you are using an uncased model.")
-
-    parser.add_argument("--per_gpu_train_batch_size", default=8, type=int,
-                        help="Batch size per GPU/CPU for training.")
-    parser.add_argument("--learning_rate", default=5e-5, type=float,
-                        help="The initial learning rate for Adam.")
-    parser.add_argument('--gradient_accumulation_steps', type=int, default=1,
-                        help="Number of updates steps to accumulate before performing a backward/update pass.")
-    parser.add_argument("--weight_decay", default=0.01, type=float,
-                        help="Weight decay if we apply some.")
-    parser.add_argument("--adam_epsilon", default=1e-8, type=float,
-                        help="Epsilon for Adam optimizer.")
-    parser.add_argument("--max_grad_norm", default=1.0, type=float,
-                        help="Max gradient norm.")
-    parser.add_argument("--label_smoothing", default=0.1, type=float,
-                        help="Max gradient norm.")
-    parser.add_argument("--num_training_steps", default=-1, type=int,
-                        help="set total number of training steps to perform")
-    parser.add_argument("--num_training_epochs", default=10, type=int,
-                        help="set total number of training epochs to perform (--num_training_steps has higher priority)")
-    parser.add_argument("--num_warmup_steps", default=0, type=int,
-                        help="Linear warmup over warmup_steps.")
-
-    parser.add_argument("--random_prob", default=0.1, type=float,
-                        help="prob to random replace a masked token")
-    parser.add_argument("--keep_prob", default=0.1, type=float,
-                        help="prob to keep no change for a masked token")
-    parser.add_argument("--fix_word_embedding", action='store_true',
-                        help="Set word embedding no grad when finetuning.")
-
-    parser.add_argument('--logging_steps', type=int, default=500,
-                        help="Log every X updates steps.")
-    parser.add_argument('--save_steps', type=int, default=1500,
-                        help="Save checkpoint every X updates steps.")
-    parser.add_argument("--no_cuda", action='store_true',
-                        help="Whether not to use CUDA when available")
-    parser.add_argument('--seed', type=int, default=42,
-                        help="random seed for initialization")
-
-    parser.add_argument("--local_rank", type=int, default=-1,
-                        help="local_rank for distributed training on gpus")
-    parser.add_argument('--fp16', action='store_true',
-                        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
-    parser.add_argument('--fp16_opt_level', type=str, default='O1',
-                        help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
-                             "See details at https://nvidia.github.io/apex/amp.html")
+    # other parameters
+    parser.add_argument(
+        "--config_name",
+        default=None,
+        type=str,
+        help="Pretrained config name or path if not the same as model_name"
+    )
+    parser.add_argument(
+        "--tokenizer_name",
+        default=None,
+        type=str,
+        help="Pretrained tokenizer name or path if not the same as model_name"
+    )
+    parser.add_argument(
+        "--cache_dir",
+        default=None,
+        type=str,
+        help="Where do you want to store the pre-trained models downloaded from s3"
+    )
+    parser.add_argument(
+        "--max_source_seq_length",
+        default=464,
+        type=int,
+        help="The maximum total source sequence length after WordPiece tokenization. Sequences longer than this will be truncated, and sequences shorter than this will be padded."
+    )
+    parser.add_argument(
+        "--max_target_seq_length",
+        default=48,
+        type=int,
+        help="The maximum total target sequence length after WordPiece tokenization. Sequences longer than this will be truncated, and sequences shorter than this will be padded."
+    )
+    parser.add_argument(
+        "--cached_train_features_file",
+        default=None,
+        type=str,
+        help="Cached training features file"
+    )
+    parser.add_argument(
+        "--do_lower_case",
+        action='store_true',
+        help="Set this flag if you are using an uncased model."
+    )
+    parser.add_argument(
+        "--per_gpu_train_batch_size",
+        default=8,
+        type=int,
+        help="Batch size per GPU/CPU for training."
+    )
+    parser.add_argument(
+        "--learning_rate",
+        default=5e-5,
+        type=float,
+        help="The initial learning rate for Adam."
+    )
+    parser.add_argument(
+        '--gradient_accumulation_steps',
+        type=int,
+        default=1,
+        help="Number of updates steps to accumulate before performing a backward/update pass."
+    )
+    parser.add_argument(
+        "--weight_decay",
+        default=0.01,
+        type=float,
+        help="Weight decay if we apply some."
+    )
+    parser.add_argument(
+        "--adam_epsilon",
+        default=1e-8,
+        type=float,
+        help="Epsilon for Adam optimizer."
+    )
+    parser.add_argument(
+        "--max_grad_norm",
+        default=1.0,
+        type=float,
+        help="Max gradient norm."
+    )
+    parser.add_argument(
+        "--label_smoothing",
+        default=0.1,
+        type=float,
+        help="Max gradient norm."
+    )
+    parser.add_argument(
+        "--num_training_steps",
+        default=-1,
+        type=int,
+        help="set total number of training steps to perform"
+    )
+    parser.add_argument(
+        "--num_training_epochs",
+        default=10,
+        type=int,
+        help="set total number of training epochs to perform (--num_training_steps has higher priority)"
+    )
+    parser.add_argument(
+        "--num_warmup_steps",
+        default=0,
+        type=int,
+        help="Linear warmup over warmup_steps."
+    )
+    parser.add_argument(
+        "--random_prob",
+        default=0.1,
+        type=float,
+        help="prob to random replace a masked token"
+    )
+    parser.add_argument(
+        "--keep_prob",
+        default=0.1,
+        type=float,
+        help="prob to keep no change for a masked token"
+    )
+    parser.add_argument(
+        "--fix_word_embedding",
+        action='store_true',
+        help="Set word embedding no grad when finetuning."
+    )
+    parser.add_argument(
+        '--logging_steps',
+        type=int,
+        default=500,
+        help="Log every X updates steps."
+    )
+    parser.add_argument(
+        '--save_steps',
+        type=int,
+        default=1500,
+        help="Save checkpoint every X updates steps."
+    )
+    parser.add_argument(
+        "--no_cuda",
+        action='store_true',
+        help="Whether not to use CUDA when available"
+    )
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=42,
+        help="random seed for initialization"
+    )
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=-1,
+        help="local_rank for distributed training on gpus"
+    )
+    parser.add_argument(
+        '--fp16',
+        action='store_true',
+        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit"
+    )
+    parser.add_argument(
+        '--fp16_opt_level',
+        type=str,
+        default='O1',
+        help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']. See details at https://nvidia.github.io/apex/amp.html"
+    )
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
 
-    parser.add_argument('--source_mask_prob', type=float, default=-1.0,
-                        help="Probability to mask source sequence in fine-tuning")
-    parser.add_argument('--target_mask_prob', type=float, default=0.5,
-                        help="Probability to mask target sequence in fine-tuning")
-    parser.add_argument('--num_max_mask_token', type=int, default=0,
-                        help="The number of the max masked tokens in target sequence")
-    parser.add_argument('--mask_way', type=str, default='v2',
-                        help="Fine-tuning method (v0: position shift, v1: masked LM, v2: pseudo-masking)")
-    parser.add_argument("--lmdb_cache", action='store_true',
-                        help="Use LMDB to cache training features")
-    parser.add_argument("--lmdb_dtype", type=str, default='h', 
-                        help="Data type for cached data type for LMDB")
+    parser.add_argument(
+        '--source_mask_prob',
+        type=float,
+        default=-1.0,
+        help="Probability to mask source sequence in fine-tuning"
+    )
+    parser.add_argument(
+        '--target_mask_prob',
+        type=float,
+        default=0.5,
+        help="Probability to mask target sequence in fine-tuning"
+    )
+    parser.add_argument(
+        '--num_max_mask_token',
+        type=int,
+        default=0,
+        help="The number of the max masked tokens in target sequence"
+    )
+    parser.add_argument(
+        '--mask_way',
+        type=str,
+        default='v2',
+        help="Fine-tuning method (v0: position shift, v1: masked LM, v2: pseudo-masking)"
+    )
+    parser.add_argument(
+        "--lmdb_cache",
+        action='store_true',
+        help="Use LMDB to cache training features"
+    )
+    parser.add_argument(
+        "--lmdb_dtype",
+        type=str,
+        default='h',
+        help="Data type for cached data type for LMDB"
+    )
+
     parser.add_argument
+
     args = parser.parse_args()
+
     return args
 
 
 def prepare(args):
-    # Setup distant debugging if needed
+    #
+    # setup distant debugging if needed
+    #
     if args.server_ip and args.server_port:
-        # Distant debugging - see https://code.visualstudio.com/docs/python/debugging#_attach-to-a-local-script
+        #
+        # distant debugging - see https://code.visualstudio.com/docs/python/debugging#_attach-to-a-local-script
+        #
         import ptvsd
+
         print("Waiting for debugger attach")
+
         ptvsd.enable_attach(address=(args.server_ip, args.server_port), redirect_output=True)
         ptvsd.wait_for_attach()
 
     os.makedirs(args.output_dir, exist_ok=True)
-    json.dump(args.__dict__, open(os.path.join(
-        args.output_dir, 'train_opt.json'), 'w'), sort_keys=True, indent=2)
 
-    # Setup CUDA, GPU & distributed training
+    json.dump(args.__dict__, open(os.path.join(
+        args.output_dir, 'train_opt.json'
+    ), 'w'), sort_keys=True, indent=2)
+
+    # setup cuda, gpu & distributed training
     if args.local_rank == -1 or args.no_cuda:
+
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+
         args.n_gpu = torch.cuda.device_count()
-    else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+
+    else:  # initializes the distributed backend which will take care of sychronizing nodes/GPUs
+
         torch.cuda.set_device(args.local_rank)
+
         device = torch.device("cuda", args.local_rank)
+
         torch.distributed.init_process_group(backend='nccl')
+
         args.n_gpu = 1
+
     args.device = device
 
-    # Setup logging
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
-                        datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN)
-    logger.warning("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
-                   args.local_rank, device, args.n_gpu, bool(args.local_rank != -1), args.fp16)
+    # setup logging
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
+        datefmt='%m/%d/%Y %H:%M:%S',
+        level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN
+    )
+    logger.warning(
+        "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
+        args.local_rank,
+        device,
+        args.n_gpu,
+        bool(args.local_rank != -1),
+        args.fp16
+    )
 
-    # Set seed
+    # set seed
     random.seed(args.seed)
+
     np.random.seed(args.seed)
+
     torch.manual_seed(args.seed)
+
     if args.n_gpu > 0:
+        #
         torch.cuda.manual_seed_all(args.seed)
 
-    logger.info("Training/evaluation parameters %s", args)
+    logger.info("training/evaluation parameters %s", args)
 
-    # Before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
-    # Otherwise it'll default to "promote" mode, and we'll get fp32 operations. Note that running `--fp16_opt_level="O2"` will
+    # before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
+    # otherwise it'll default to "promote" mode, and we'll get fp32 operations. Note that running `--fp16_opt_level="O2"` will
     # remove the need for this code, but it is still valid.
     if args.fp16:
+
         try:
+
             import apex
+
             apex.amp.register_half_function(torch, 'einsum')
+
         except ImportError:
+
             raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
 
 
 def get_model_and_tokenizer(args):
+    #
     config_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+
     model_config = config_class.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
-        cache_dir=args.cache_dir if args.cache_dir else None)
+        cache_dir=args.cache_dir if args.cache_dir else None
+    )
+
     config = BertForSeq2SeqConfig.from_exist_config(
-        config=model_config, label_smoothing=args.label_smoothing, 
+        config=model_config,
+        label_smoothing=args.label_smoothing,
         fix_word_embedding=args.fix_word_embedding, 
-        max_position_embeddings=args.max_source_seq_length + args.max_target_seq_length)
+        max_position_embeddings=args.max_source_seq_length + args.max_target_seq_length
+    )
 
     logger.info("Model config for seq2seq: %s", str(config))
 
     tokenizer = tokenizer_class.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
-        do_lower_case=args.do_lower_case, cache_dir=args.cache_dir if args.cache_dir else None)
+        do_lower_case=args.do_lower_case,
+        cache_dir=args.cache_dir if args.cache_dir else None
+    )
 
-    model_class = \
-        BertForSequenceToSequenceWithPseudoMask if args.mask_way == 'v2' \
-            else BertForSequenceToSequenceUniLMV1
+    model_class = BertForSequenceToSequenceWithPseudoMask if args.mask_way == 'v2' else BertForSequenceToSequenceUniLMV1
 
     logger.info("Construct model %s" % model_class.MODEL_NAME)
 
     model = model_class.from_pretrained(
-        args.model_name_or_path, config=config, model_type=args.model_type,
+        args.model_name_or_path,
+        config=config,
+        model_type=args.model_type,
         reuse_position_embedding=True,
-        cache_dir=args.cache_dir if args.cache_dir else None)
+        cache_dir=args.cache_dir if args.cache_dir else None
+    )
 
     return model, tokenizer
 
 
 def main():
+    #
     args = get_args()
+
     prepare(args)
 
     if args.local_rank not in [-1, 0]:
-        torch.distributed.barrier()
-        # Make sure only the first process in distributed training will download model & vocab
-    # Load pretrained model and tokenizer
+        #
+        torch.distributed.barrier() # make sure only the first process in distributed training will download model & vocab
+
+    # load pretrained model and tokenizer
     model, tokenizer = get_model_and_tokenizer(args)
 
     if args.local_rank == 0:
-        torch.distributed.barrier()
-        # Make sure only the first process in distributed training will download model & vocab
+        #
+        torch.distributed.barrier() # make sure only the first process in distributed training will download model & vocab
 
     if args.cached_train_features_file is None:
+        #
         if not args.lmdb_cache:
             args.cached_train_features_file = os.path.join(args.output_dir, "cached_features_for_training.pt")
         else:
             args.cached_train_features_file = os.path.join(args.output_dir, "cached_features_for_training_lmdb")
+
     training_features = utils.load_and_cache_examples(
-        example_file=args.train_file, tokenizer=tokenizer, local_rank=args.local_rank,
-        cached_features_file=args.cached_train_features_file, shuffle=True, 
-        lmdb_cache=args.lmdb_cache, lmdb_dtype=args.lmdb_dtype, 
+        example_file=args.train_file,
+        tokenizer=tokenizer,
+        local_rank=args.local_rank,
+        cached_features_file=args.cached_train_features_file,
+        shuffle=True,
+        lmdb_cache=args.lmdb_cache,
+        lmdb_dtype=args.lmdb_dtype,
     )
 
     train(args, training_features, model, tokenizer)
 
 
 if __name__ == "__main__":
+    #
     main()
