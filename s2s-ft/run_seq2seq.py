@@ -8,6 +8,7 @@ import random
 
 import numpy as np
 import torch
+
 from torch.utils.data import (DataLoader, SequentialSampler)
 from torch.utils.data.distributed import DistributedSampler
 
@@ -19,12 +20,18 @@ except:
 import tqdm
 
 from s2s_ft.modeling import BertForSequenceToSequenceWithPseudoMask, BertForSequenceToSequenceUniLMV1
+
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers import \
-    RobertaConfig, BertConfig, \
-    BertTokenizer, RobertaTokenizer, \
-    XLMRobertaConfig, XLMRobertaTokenizer, \
-    ElectraConfig, ElectraTokenizer
+    RobertaConfig, \
+    BertConfig, \
+    BertTokenizer, \
+    RobertaTokenizer, \
+    XLMRobertaConfig, \
+    XLMRobertaTokenizer, \
+    ElectraConfig, \
+    ElectraTokenizer
+
 from s2s_ft.configuration_unilm import UnilmConfig
 from s2s_ft.tokenization_unilm import UnilmTokenizer
 from s2s_ft.configuration_minilm import MinilmConfig
@@ -47,41 +54,63 @@ MODEL_CLASSES = {
 
 
 def prepare_for_training(args, model, checkpoint_state_dict, amp):
+    #
     no_decay = ['bias', 'LayerNorm.weight']
+
     optimizer_grouped_parameters = [
-        {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-         'weight_decay': args.weight_decay},
-        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+        {
+            'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            'weight_decay': args.weight_decay
+        },
+        {
+            'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0
+        }
     ]
+
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
 
     if checkpoint_state_dict:
+        #
         optimizer.load_state_dict(checkpoint_state_dict['optimizer'])
+
         model.load_state_dict(checkpoint_state_dict['model'])
-        
+        #
         # then remove optimizer state to make amp happy
         # https://github.com/NVIDIA/apex/issues/480#issuecomment-587154020
+        #
         if amp:
+            #
             optimizer.state = {} 
 
     if amp:
+        #
         model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
+        #
         if checkpoint_state_dict:
+            #
             amp.load_state_dict(checkpoint_state_dict['amp'])
 
-            # Black Tech from https://github.com/NVIDIA/apex/issues/480#issuecomment-587154020
+            # black tech from https://github.com/NVIDIA/apex/issues/480#issuecomment-587154020
             # forward, backward, optimizer step, zero_grad
-            random_input = {'source_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
-                            'target_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
-                            'label_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long), 
-                            'pseudo_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
-                            'num_source_tokens': torch.zeros(size=(2,), device=args.device, dtype=torch.long),
-                            'num_target_tokens': torch.zeros(size=(2,), device=args.device, dtype=torch.long)}
+            random_input = {
+                'source_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
+                'target_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
+                'label_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
+                'pseudo_ids': torch.ones(size=(2, 2), device=args.device, dtype=torch.long),
+                'num_source_tokens': torch.zeros(size=(2,), device=args.device, dtype=torch.long),
+                'num_target_tokens': torch.zeros(size=(2,), device=args.device, dtype=torch.long)
+            }
+
             loss = model(**random_input)
+
             print("Loss = %f" % loss.cpu().item())
+
             with amp.scale_loss(loss, optimizer) as scaled_loss:
+                #
                 scaled_loss.backward()
+
             optimizer.step()
+
             model.zero_grad()
 
             # then load optimizer state_dict again (this time without removing optimizer.state)
@@ -89,29 +118,40 @@ def prepare_for_training(args, model, checkpoint_state_dict, amp):
 
     # multi-gpu training (should be after apex fp16 initialization)
     if args.n_gpu > 1:
+        #
         model = torch.nn.DataParallel(model)
 
     # Distributed training (should be after apex fp16 initialization)
     if args.local_rank != -1:
+        #
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
+            model,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
+            find_unused_parameters=True
+        )
 
     return model, optimizer
 
 
 def train(args, training_features, model, tokenizer):
-    """ Train the model """
+    """
+    Train the model
+    """
     if args.local_rank in [-1, 0] and args.log_dir:
         tb_writer = SummaryWriter(log_dir=args.log_dir)
     else:
         tb_writer = None
 
     if args.fp16:
+
         try:
             from apex import amp
         except ImportError:
             raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+
     else:
+
         amp = None
 
     # model recover
@@ -123,36 +163,57 @@ def train(args, training_features, model, tokenizer):
         checkpoint_state_dict = None
 
     model.to(args.device)
+
     model, optimizer = prepare_for_training(args, model, checkpoint_state_dict, amp=amp)
 
     per_node_train_batch_size = args.per_gpu_train_batch_size * args.n_gpu * args.gradient_accumulation_steps
+
     train_batch_size = per_node_train_batch_size * (torch.distributed.get_world_size() if args.local_rank != -1 else 1)
+
     global_step = recover_step if recover_step else 0
 
     if args.num_training_steps == -1:
+        #
         args.num_training_steps = args.num_training_epochs * len(training_features) / train_batch_size
 
     scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=args.num_warmup_steps,
-        num_training_steps=args.num_training_steps, last_epoch=-1)
+        optimizer,
+        num_warmup_steps=args.num_warmup_steps,
+        num_training_steps=args.num_training_steps,
+        last_epoch=-1
+    )
 
     if checkpoint_state_dict:
+        #
         scheduler.load_state_dict(checkpoint_state_dict["lr_scheduler"])
 
     train_dataset = utils.Seq2seqDatasetForBert(
-        features=training_features, max_source_len=args.max_source_seq_length,
-        max_target_len=args.max_target_seq_length, vocab_size=tokenizer.vocab_size,
-        cls_id=tokenizer.cls_token_id, sep_id=tokenizer.sep_token_id, pad_id=tokenizer.pad_token_id,
-        mask_id=tokenizer.mask_token_id, random_prob=args.random_prob, keep_prob=args.keep_prob,
-        offset=train_batch_size * global_step, num_training_instances=train_batch_size * args.num_training_steps,
-        source_mask_prob=args.source_mask_prob, target_mask_prob=args.target_mask_prob, 
-        mask_way=args.mask_way, num_max_mask_token=args.num_max_mask_token, 
+        features=training_features,
+        max_source_len=args.max_source_seq_length,
+        max_target_len=args.max_target_seq_length,
+        vocab_size=tokenizer.vocab_size,
+        cls_id=tokenizer.cls_token_id,
+        sep_id=tokenizer.sep_token_id,
+        pad_id=tokenizer.pad_token_id,
+        mask_id=tokenizer.mask_token_id,
+        random_prob=args.random_prob,
+        keep_prob=args.keep_prob,
+        offset=train_batch_size * global_step,
+        num_training_instances=train_batch_size * args.num_training_steps,
+        source_mask_prob=args.source_mask_prob,
+        target_mask_prob=args.target_mask_prob,
+        mask_way=args.mask_way,
+        num_max_mask_token=args.num_max_mask_token,
     )
 
     logger.info("Check dataset:")
+
     for i in range(5):
+
         source_ids, target_ids = train_dataset.__getitem__(i)[:2]
+
         logger.info("Instance-%d" % i)
+
         logger.info("Source tokens = %s" % " ".join(tokenizer.convert_ids_to_tokens(source_ids)))
         logger.info("Target tokens = %s" % " ".join(tokenizer.convert_ids_to_tokens(target_ids)))
 
@@ -171,17 +232,24 @@ def train(args, training_features, model, tokenizer):
     if args.num_training_steps <= global_step:
         logger.info("Training is done. Please use a new dir or clean this dir!")
     else:
+        #
         # The training features are shuffled
-        train_sampler = SequentialSampler(train_dataset) \
-            if args.local_rank == -1 else DistributedSampler(train_dataset, shuffle=False)
+        #
+        train_sampler = SequentialSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset, shuffle=False)
+
         train_dataloader = DataLoader(
-            train_dataset, sampler=train_sampler,
+            train_dataset,
+            sampler=train_sampler,
             batch_size=per_node_train_batch_size // args.gradient_accumulation_steps,
-            collate_fn=utils.batch_list_to_batch_tensors)
+            collate_fn=utils.batch_list_to_batch_tensors
+        )
 
         train_iterator = tqdm.tqdm(
-            train_dataloader, initial=global_step * args.gradient_accumulation_steps,
-            desc="Iter (loss=X.XXX, lr=X.XXXXXXX)", disable=args.local_rank not in [-1, 0])
+            train_dataloader,
+            initial=global_step * args.gradient_accumulation_steps,
+            desc="Iter (loss=X.XXX, lr=X.XXXXXXX)",
+            disable=args.local_rank not in [-1, 0]
+        )
 
         model.train()
         model.zero_grad()
@@ -189,41 +257,62 @@ def train(args, training_features, model, tokenizer):
         tr_loss, logging_loss = 0.0, 0.0
 
         for step, batch in enumerate(train_iterator):
+
             if global_step > args.num_training_steps:
+
                 break
+
             batch = tuple(t.to(args.device) for t in batch)
+
             if args.mask_way == 'v2':
-                inputs = {'source_ids': batch[0],
-                        'target_ids': batch[1],
-                        'label_ids': batch[2], 
-                        'pseudo_ids': batch[3],
-                        'num_source_tokens': batch[4],
-                        'num_target_tokens': batch[5]}
+
+                inputs = {
+                    'source_ids': batch[0],
+                    'target_ids': batch[1],
+                    'label_ids': batch[2],
+                    'pseudo_ids': batch[3],
+                    'num_source_tokens': batch[4],
+                    'num_target_tokens': batch[5]
+                }
+
             elif args.mask_way == 'v1' or args.mask_way == 'v0':
-                inputs = {'source_ids': batch[0],
-                        'target_ids': batch[1],
-                        'masked_ids': batch[2],
-                        'masked_pos': batch[3],
-                        'masked_weight': batch[4],
-                        'num_source_tokens': batch[5],
-                        'num_target_tokens': batch[6]}
+
+                inputs = {
+                    'source_ids': batch[0],
+                    'target_ids': batch[1],
+                    'masked_ids': batch[2],
+                    'masked_pos': batch[3],
+                    'masked_weight': batch[4],
+                    'num_source_tokens': batch[5],
+                    'num_target_tokens': batch[6]
+                }
+
             loss = model(**inputs)
+
             if args.n_gpu > 1:
+                #
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 
             train_iterator.set_description('Iter (loss=%5.3f) lr=%9.7f' % (loss.item(), scheduler.get_lr()[0]))
 
             if args.gradient_accumulation_steps > 1:
+                #
                 loss = loss / args.gradient_accumulation_steps
 
             if args.fp16:
+                #
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
+
                     scaled_loss.backward()
+
             else:
+
                 loss.backward()
 
             logging_loss += loss.item()
+
             if (step + 1) % args.gradient_accumulation_steps == 0:
+                #
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
                 else:
@@ -232,18 +321,22 @@ def train(args, training_features, model, tokenizer):
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
+
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
+
                     logger.info("")
                     logger.info(" Step [%d ~ %d]: %.2f", global_step - args.logging_steps, global_step, logging_loss)
+
                     logging_loss = 0.0
 
-                if args.local_rank in [-1, 0] and args.save_steps > 0 and \
-                        (global_step % args.save_steps == 0 or global_step == args.num_training_steps):
+                if args.local_rank in [-1, 0] and args.save_steps > 0 and (global_step % args.save_steps == 0 or global_step == args.num_training_steps):
 
                     save_path = os.path.join(args.output_dir, "ckpt-%d" % global_step)
+
                     os.makedirs(save_path, exist_ok=True)
+
                     model_to_save = model.module if hasattr(model, "module") else model
                     model_to_save.save_pretrained(save_path)
                     
@@ -251,17 +344,22 @@ def train(args, training_features, model, tokenizer):
                         "optimizer": optimizer.state_dict(),
                         "lr_scheduler": scheduler.state_dict(),
                     }
+
                     if args.fp16:
+
                         optim_to_save["amp"] = amp.state_dict()
+
                     torch.save(optim_to_save, os.path.join(save_path, utils.OPTIM_NAME))
 
                     logger.info("Saving model checkpoint %d into %s", global_step, save_path)
 
     if args.local_rank in [-1, 0] and tb_writer:
+
         tb_writer.close()
 
 
 def get_args():
+    #
     parser = argparse.ArgumentParser()
 
     # parser.add_argument("--train_source_file", default=None, type=str, required=True,

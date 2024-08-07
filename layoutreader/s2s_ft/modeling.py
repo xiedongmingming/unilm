@@ -47,11 +47,15 @@ LAYOUTLM_PRETRAINED_CONFIG_ARCHIVE_MAP = {
 
 
 class LayoutlmConfig(BertConfig):
+    #
     pretrained_config_archive_map = LAYOUTLM_PRETRAINED_CONFIG_ARCHIVE_MAP
+
     model_type = "bert"
 
     def __init__(self, max_2d_position_embeddings=1024, **kwargs):
+        #
         super().__init__(**kwargs)
+
         self.max_2d_position_embeddings = max_2d_position_embeddings
 
 
@@ -91,13 +95,18 @@ class BertPreTrainedForSeq2SeqModel(BertPreTrainedModel):
             module.bias.data.zero_()
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, reuse_position_embedding=None,
-                        *model_args, **kwargs):
+    def from_pretrained(cls, pretrained_model_name_or_path, reuse_position_embedding=None, *model_args, **kwargs):
+
         model_type = kwargs.pop('model_type', None)
+
         if model_type is not None and "state_dict" not in kwargs:
+
             if model_type in cls.supported_convert_pretrained_model_archive_map:
+
                 pretrained_model_archive_map = cls.supported_convert_pretrained_model_archive_map[model_type]
+
                 if pretrained_model_name_or_path in pretrained_model_archive_map:
+
                     state_dict = get_checkpoint_from_transformer_cache(
                         archive_file=pretrained_model_archive_map[pretrained_model_name_or_path],
                         pretrained_model_name_or_path=pretrained_model_name_or_path,
@@ -105,57 +114,93 @@ class BertPreTrainedForSeq2SeqModel(BertPreTrainedModel):
                         cache_dir=kwargs.get("cache_dir", None), force_download=kwargs.get("force_download", None),
                         proxies=kwargs.get("proxies", None), resume_download=kwargs.get("resume_download", None),
                     )
+
                     state_dict = state_dict_convert[model_type](state_dict)
+
                     kwargs["state_dict"] = state_dict
+
                 elif os.path.isfile(pretrained_model_name_or_path):
+
                     kwargs["state_dict"] = torch.load(pretrained_model_name_or_path, map_location='cpu')
 
         if kwargs["state_dict"] is None:
+
             logger.info("s2s-ft does't support the model !")
+
             raise NotImplementedError()
 
         config = kwargs["config"]
+
         state_dict = kwargs["state_dict"]
+
         # initialize new position embeddings (From Microsoft/UniLM)
         _k = 'bert.embeddings.position_embeddings.weight'
+
         if _k in state_dict:
+
             if config.max_position_embeddings > state_dict[_k].shape[0]:
+
                 logger.info("Resize > position embeddings !")
+
                 old_vocab_size = state_dict[_k].shape[0]
+
                 new_position_embedding = state_dict[_k].data.new_tensor(torch.ones(
-                    size=(config.max_position_embeddings, state_dict[_k].shape[1])), dtype=torch.float)
+                    size=(config.max_position_embeddings, state_dict[_k].shape[1])), dtype=torch.float
+                )
+
                 new_position_embedding = nn.Parameter(data=new_position_embedding, requires_grad=True)
                 new_position_embedding.data.normal_(mean=0.0, std=config.initializer_range)
+
                 max_range = config.max_position_embeddings if reuse_position_embedding else old_vocab_size
+
                 shift = 0
+
                 while shift < max_range:
+
                     delta = min(old_vocab_size, max_range - shift)
+
                     new_position_embedding.data[shift: shift + delta, :] = state_dict[_k][:delta, :]
+
                     logger.info("  CP [%d ~ %d] into [%d ~ %d]  " % (0, delta, shift, shift + delta))
+
                     shift += delta
+
                 state_dict[_k] = new_position_embedding.data
+
                 del new_position_embedding
+
             elif config.max_position_embeddings < state_dict[_k].shape[0]:
+
                 logger.info("Resize < position embeddings !")
+
                 old_vocab_size = state_dict[_k].shape[0]
+
                 new_position_embedding = state_dict[_k].data.new_tensor(torch.ones(
-                    size=(config.max_position_embeddings, state_dict[_k].shape[1])), dtype=torch.float)
+                    size=(config.max_position_embeddings, state_dict[_k].shape[1])), dtype=torch.float
+                )
+
                 new_position_embedding = nn.Parameter(data=new_position_embedding, requires_grad=True)
                 new_position_embedding.data.normal_(mean=0.0, std=config.initializer_range)
                 new_position_embedding.data.copy_(state_dict[_k][:config.max_position_embeddings, :])
+
                 state_dict[_k] = new_position_embedding.data
+
                 del new_position_embedding
 
         return super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
 
 class BertEmbeddings(nn.Module):
-    """Construct the embeddings from word, position and token_type embeddings.
+    """
+    Construct the embeddings from word, position and token_type embeddings.
     """
     def __init__(self, config):
+
         super(BertEmbeddings, self).__init__()
+
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
         self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
+
         if config.type_vocab_size > 0:
             self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
         else:
@@ -164,16 +209,20 @@ class BertEmbeddings(nn.Module):
         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
         # any TensorFlow checkpoint file
         self.LayerNorm = BertLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, input_ids=None, token_type_ids=None, position_ids=None, inputs_embeds=None):
+        #
         if input_ids is not None:
             input_shape = input_ids.size()
         else:
             input_shape = inputs_embeds.size()[:-1]
 
         seq_length = input_shape[1]
+
         device = input_ids.device if input_ids is not None else inputs_embeds.device
+
         if position_ids is None:
             position_ids = torch.arange(seq_length, dtype=torch.long, device=device)
             position_ids = position_ids.unsqueeze(0).expand(input_shape)
@@ -181,16 +230,20 @@ class BertEmbeddings(nn.Module):
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
 
         if inputs_embeds is None:
+            #
             inputs_embeds = self.word_embeddings(input_ids)
+
         position_embeddings = self.position_embeddings(position_ids)
 
         embeddings = inputs_embeds + position_embeddings
 
         if self.token_type_embeddings:
+            #
             embeddings = embeddings + self.token_type_embeddings(token_type_ids)
 
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
+
         return embeddings
 
 

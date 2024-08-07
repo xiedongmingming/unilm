@@ -28,12 +28,17 @@ from ditod import add_vit_config
 from ditod import DetrDatasetMapper
 
 from detectron2.data.datasets import register_coco_instances
+
 import logging
+
 from detectron2.utils.logger import setup_logger
 from detectron2.utils import comm
 from detectron2.engine.defaults import create_ddp_model
+
 import weakref
+
 from detectron2.engine.train_loop import AMPTrainer, SimpleTrainer
+
 from ditod import MyDetectionCheckpointer, ICDAREvaluator
 from ditod import MyTrainer
 
@@ -43,16 +48,22 @@ def setup(args):
     Create configs and perform basic setups.
     """
     cfg = get_cfg()
+
     # add_coat_config(cfg)
+
     add_vit_config(cfg)
+
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
+
     default_setup(cfg, args)
+
     return cfg
 
 
 def main(args):
+
     cfg = setup(args)
 
     """
@@ -87,30 +98,44 @@ def main(args):
     )
 
     if args.eval_only:
+        #
         model = MyTrainer.build_model(cfg)
+
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
+
         res = MyTrainer.test(cfg, model)
+
         return res
 
     trainer = MyTrainer(cfg)
+
     trainer.resume_or_load(resume=args.resume)
+
     return trainer.train()
 
 
 if __name__ == "__main__":
+
     parser = default_argument_parser()
+
     parser.add_argument("--debug", action="store_true", help="enable debug mode")
+
     args = parser.parse_args()
+
     print("Command Line Args:", args)
 
     if args.debug:
+        #
         import debugpy
 
         print("Enabling attach starts.")
+
         debugpy.listen(address=('0.0.0.0', 9310))
+
         debugpy.wait_for_client()
+
         print("Enabling attach ends.")
 
     launch(
