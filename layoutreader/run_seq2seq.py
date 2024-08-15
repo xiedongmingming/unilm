@@ -513,7 +513,7 @@ def get_args():
         default=1500,
         help="Save checkpoint every X updates steps."
     )
-    parser.add_argument(
+    parser.add_argument(  # 表示不使用CUDA
         "--no_cuda",
         action='store_true',
         help="Whether not to use CUDA when available"
@@ -578,8 +578,7 @@ def prepare(args):
     os.makedirs(args.output_dir, exist_ok=True)
 
     json.dump(args.__dict__, open(os.path.join(
-        args.output_dir,
-        'train_opt.json'
+        args.output_dir, 'train_opt.json'
     ), 'w'), sort_keys=True, indent=2)
 
     # setup cuda, gpu & distributed training
@@ -630,8 +629,8 @@ def prepare(args):
 
     logger.info("training/evaluation parameters %s", args)
 
-    # Before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
-    # Otherwise it'll default to "promote" mode, and we'll get fp32 operations. Note that running `--fp16_opt_level="O2"` will
+    # before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
+    # otherwise it'll default to "promote" mode, and we'll get fp32 operations. note that running `--fp16_opt_level="O2"` will
     # remove the need for this code, but it is still valid.
     if args.fp16:
 
@@ -643,14 +642,14 @@ def prepare(args):
 
         except ImportError:
 
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+            raise ImportError("please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
 
 
 def get_model_and_tokenizer(args):
     #
-    config_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+    config_class, tokenizer_class = MODEL_CLASSES[args.model_type]  # LayoutlmConfig, BertTokenizer
 
-    model_config = config_class.from_pretrained(  # LayoutlmConfig->BertConfig->PretrainedConfig
+    model_config = config_class.from_pretrained(  # LayoutlmConfig->BertConfig->PretrainedConfig：读取配置并创建对象
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
         force_download=False,
@@ -673,9 +672,9 @@ def get_model_and_tokenizer(args):
         if args.tokenizer_name is not None:
             tokenizer_name = args.tokenizer_name
         else:
-            tokenizer_name = 'bert' + args.model_name_or_path[8:]
+            tokenizer_name = 'bert' + args.model_name_or_path[8:]  # layoutlm->bert
 
-        tokenizer = tokenizer_class.from_pretrained(
+        tokenizer = tokenizer_class.from_pretrained(  # BertTokenizer
             tokenizer_name,
             do_lower_case=args.do_lower_case,
             cache_dir=args.cache_dir if args.cache_dir else None
@@ -689,7 +688,7 @@ def get_model_and_tokenizer(args):
             cache_dir=args.cache_dir if args.cache_dir else None
         )
 
-    model = LayoutlmForSequenceToSequence.from_pretrained(
+    model = LayoutlmForSequenceToSequence.from_pretrained( # BertPreTrainedModel
         args.model_name_or_path,
         config=config,
         model_type=args.model_type,

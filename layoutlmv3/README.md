@@ -1,12 +1,13 @@
 # layoutlmv3 (document foundation model)
 
-self-supervised pre-training techniques have achieved remarkable progress in document aI. most multimodal pre-trained models use a masked language modeling objective to learn bidirectional representations on the text modality, but they differ in pre-training objectives for the image modality. this discrepancy adds difficulty to multimodal representation learning. in this paper, we propose **layoutlmv3** to pre-train multimodal transformers for document ai with unified text and image masking. additionally, layoutlmv3 is pre-trained with a word-patch alignment objective to learn cross-modal alignment by predicting whether the corresponding image patch of a text word is masked. the simple unified architecture and training objectives make layoutlmv3 a general-purpose pre-trained model for both text-centric and image-centric document ai tasks. experimental results show that layoutlmv3 achieves state-of-the-art performance not only in text-centric tasks, including form understanding, receipt understanding, and document visual question answering, but also in image-centric tasks such as document image classification and document layout analysis.
+self-supervised pre-training techniques have achieved remarkable progress in document ai. most multimodal pre-trained models use a masked language modeling objective to learn bidirectional representations on the text modality, but they differ in pre-training objectives for the image modality. this discrepancy adds difficulty to multimodal representation learning. in this paper, we propose **layoutlmv3** to pre-train multimodal transformers for document ai with unified text and image masking. additionally, layoutlmv3 is pre-trained with a word-patch alignment objective to learn cross-modal alignment by predicting whether the corresponding image patch of a text word is masked. the simple unified architecture and training objectives make layoutlmv3 a general-purpose pre-trained model for both text-centric and image-centric document ai tasks. experimental results show that layoutlmv3 achieves state-of-the-art performance not only in text-centric tasks, including form understanding, receipt understanding, and document visual question answering, but also in image-centric tasks such as document image classification and document layout analysis.
 
 ![](architecture.png)
 
 ## installation
 ``` bash
 conda create --name layoutlmv3 python=3.7
+
 conda activate layoutlmv3
 
 git clone https://github.com/microsoft/unilm.git
@@ -23,11 +24,11 @@ pip install -e .
 ```
 
 ## pre-trained models
-| model            | model name (path)                                                               |
-|------------------|---------------------------------------------------------------------------------|
-| layoutlmv3-base  | [microsoft/layoutlmv3-base](https://huggingface.co/microsoft/layoutlmv3-base)   |
-| layoutlmv3-large | [microsoft/layoutlmv3-large](https://huggingface.co/microsoft/layoutlmv3-large) |
-| layoutlmv3-base-chinese | [microsoft/layoutlmv3-base-chinese](https://huggingface.co/microsoft/layoutlmv3-base-chinese) |
+| model            | model name (path)                                                               | 大小                                                         |
+|------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| layoutlmv3-base  | [microsoft/layoutlmv3-base](https://huggingface.co/microsoft/layoutlmv3-base)   | 478M |
+| layoutlmv3-large | [microsoft/layoutlmv3-large](https://huggingface.co/microsoft/layoutlmv3-large) | 1.32G |
+| layoutlmv3-base-chinese | [microsoft/layoutlmv3-base-chinese](https://huggingface.co/microsoft/layoutlmv3-base-chinese) | 1.03G |
 
 ## fine-tuning examples
 we provide some fine-tuned models and their train/test logs.
@@ -35,25 +36,37 @@ we provide some fine-tuned models and their train/test logs.
 * train
   ``` bash
   python -m torch.distributed.launch \
-    --nproc_per_node=8 --master_port 4398 examples/run_funsd_cord.py \
+    --nproc_per_node=8 \
+    --master_port 4398 examples/run_funsd_cord.py \
     --dataset_name funsd \
-    --do_train --do_eval \
+    --do_train \
+    --do_eval \
     --model_name_or_path microsoft/layoutlmv3-base \
     --output_dir /path/to/layoutlmv3-base-finetuned-funsd \
-    --segment_level_layout 1 --visual_embed 1 --input_size 224 \
-    --max_steps 1000 --save_steps -1 --evaluation_strategy steps --eval_steps 100 \
-    --learning_rate 1e-5 --per_device_train_batch_size 2 --gradient_accumulation_steps 1 \
+    --segment_level_layout 1 \
+    --visual_embed 1 \
+    --input_size 224 \
+    --max_steps 1000 \
+    --save_steps -1 \
+    --evaluation_strategy steps \
+    --eval_steps 100 \
+    --learning_rate 1e-5 \
+    --per_device_train_batch_size 2 \
+    --gradient_accumulation_steps 1 \
     --dataloader_num_workers 8
   ```
 * test
   ``` bash
   python -m torch.distributed.launch \
-    --nproc_per_node=8 --master_port 4398 examples/run_funsd_cord.py \
+    --nproc_per_node=8 \
+    --master_port 4398 examples/run_funsd_cord.py \
     --dataset_name funsd \
     --do_eval \
     --model_name_or_path HYPJUDY/layoutlmv3-base-finetuned-funsd \
     --output_dir /path/to/layoutlmv3-base-finetuned-funsd \
-    --segment_level_layout 1 --visual_embed 1 --input_size 224 \
+    --segment_level_layout 1 \
+    --visual_embed 1 \
+    --input_size 224 \
     --dataloader_num_workers 8
   ```
   | model on funsd                                                                                         | precision | recall |    f1    |
@@ -101,17 +114,26 @@ the resulting directory structure looks like the following:
 * train
   ``` bash
     python -m torch.distributed.launch \
-      --nproc_per_node=8 --master_port 4398 examples/run_xfund.py \
-      --data_dir data --language zh \
+      --nproc_per_node=8 \
+      --master_port 4398 examples/run_xfund.py \
+      --data_dir data \
+      --language zh \
       --do_train --do_eval \
       --model_name_or_path microsoft/layoutlmv3-base-chinese \
       --output_dir path/to/output \
-      --segment_level_layout 1 --visual_embed 1 --input_size 224 \
-      --max_steps 1000 --save_steps -1 --evaluation_strategy steps --eval_steps 20 \
-      --learning_rate 7e-5 --per_device_train_batch_size 2 --gradient_accumulation_steps 1 \
+      --segment_level_layout 1 \
+      --visual_embed 1 \
+      --input_size 224 \
+      --max_steps 1000 \
+      --save_steps -1 \
+      --evaluation_strategy steps \
+      --eval_steps 20 \
+      --learning_rate 7e-5 \
+      --per_device_train_batch_size 2 \
+      --gradient_accumulation_steps 1 \
       --dataloader_num_workers 8
   ```
-
+  
 * test
   ``` bash
   python -m torch.distributed.launch \
@@ -136,8 +158,8 @@ we also fine-tune the layoutlmv3 chinese model on [ephoie](https://github.com/HC
 
 
 
-## Citation
-If you find LayoutLMv3 helpful, please cite us:
+## citation
+if you find layoutlmv3 helpful, please cite us:
 ```
 @inproceedings{huang2022layoutlmv3,
   author={Yupan Huang and Tengchao Lv and Lei Cui and Yutong Lu and Furu Wei},
@@ -147,20 +169,20 @@ If you find LayoutLMv3 helpful, please cite us:
 }
 ```
 
-## Acknowledgement
-Portions of the source code are based on the [transformers](https://github.com/huggingface/transformers), 
+## acknowledgement
+portions of the source code are based on the [transformers](https://github.com/huggingface/transformers), 
 [layoutlmv2](https://github.com/microsoft/unilm/tree/master/layoutlmv2), 
 [layoutlmft](https://github.com/microsoft/unilm/tree/master/layoutlmft), 
 [beit](https://github.com/microsoft/unilm/tree/master/beit),
 [dit](https://github.com/microsoft/unilm/tree/master/dit)
-and [Detectron2](https://github.com/facebookresearch/detectron2) projects.
-We sincerely thank them for their contributions!
+and [detectron2](https://github.com/facebookresearch/detectron2) projects.
+we sincerely thank them for their contributions!
 
-## License
+## license
 
-The content of this project itself is licensed under the [Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+the content of this project itself is licensed under the [attribution-noncommercial-sharealike 4.0 international (cc by-nc-sa 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-## Contact
-For help or issues using LayoutLMv3, please email [Yupan Huang](https://github.com/HYPJUDY) or submit a GitHub issue.
+## contact
+for help or issues using layoutlmv3, please email [yupan huang](https://github.com/HYPJUDY) or submit a github issue.
 
-For other communications related to LayoutLM, please contact [Lei Cui](mailto:lecu@microsoft.com) or [Furu Wei](mailto:fuwei@microsoft.com).
+for other communications related to layoutlm, please contact [lei cui](mailto:lecu@microsoft.com) or [furu wei](mailto:fuwei@microsoft.com).

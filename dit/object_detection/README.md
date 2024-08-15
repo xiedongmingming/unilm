@@ -28,7 +28,7 @@ download the data from this [link](https://dax-cdn.cdn.appdomain.cloud/dax-publa
 
 a soft link needs to be created to make the data accessible for the program:`ln -s PATH-to-PubLayNet publaynet_data`.
 
-**ICDAR 2019 cTDaR**
+**icdar 2019 ctdar**
 
 Download the data from this [link](https://github.com/cndplab-founder/ICDAR2019_cTDaR) (~4GB). Assume path to this repository is named as `PATH-to-ICDARrepo`.
 
@@ -82,27 +82,27 @@ if len(gt_file_lst) > 0:
 ```
 
 ### training
-the following commands provide two examples to train the Mask R-CNN/Cascade Mask R-CNN with DiT backbone on 8 32GB Nvidia V100 GPUs.
+the following commands provide two examples to train the mask r-cnn/cascade mask r-cnn with dit backbone on 8 32gb nvidia v100 gpus.
 
-1) Fine-tune DiT-Base with Cascade Mask R-CNN on PublayNet:
+1) fine-tune dit-base with cascade mask r-cnn on publaynet:
 ```bash
 python train_net.py --config-file publaynet_configs/cascade/cascade_dit_base.yaml --num-gpus 8 MODEL.WEIGHTS <DiT-Base_file_path or link> OUTPUT_DIR <your_output_dir> 
 ```
 
 
-2) Fine-tune DiT-Large with Mask R-CNN on ICDAR 2019 cTDaR modern:
+2) fine-tune dit-large with mask r-cnn on icdar 2019 ctdar modern:
 ```bash
 python train_net.py --config-file icdar19_configs/markrcnn/maskrcnn_dit_large.yaml --num-gpus 8 MODEL.WEIGHTS <DiT-Large_file_path or link> OUTPUT_DIR <your_output_dir> 
 ```
 
 
 
-[Detectron2's document](https://detectron2.readthedocs.io/en/latest/tutorials/getting_started.html) may help you for more details.
+[detectron2's document](https://detectron2.readthedocs.io/en/latest/tutorials/getting_started.html) may help you for more details.
 
 
-## Citation
+## citation
 
-If you find this repository useful, please consider citing our work:
+if you find this repository useful, please consider citing our work:
 ```
 @misc{li2022dit,
     title={DiT: Self-supervised Pre-training for Document Image Transformer},
@@ -116,5 +116,5 @@ If you find this repository useful, please consider citing our work:
 
 
 
-## Acknowledgment
-Thanks to [Detectron2](https://github.com/facebookresearch/detectron2) for Mask R-CNN and Cascade Mask R-CNN implementation.
+## acknowledgment
+thanks to [detectron2](https://github.com/facebookresearch/detectron2) for mask r-cnn and cascade mask r-cnn implementation.

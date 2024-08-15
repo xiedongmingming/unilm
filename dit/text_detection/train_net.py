@@ -31,6 +31,7 @@ def setup(args):
 
 
 def main(args):
+    #
     register_coco_instances(
         "funsd_train",
         {},
@@ -48,25 +49,36 @@ def main(args):
     cfg = setup(args)
 
     if args.eval_only:
+        #
         model = MyTrainer.build_model(cfg)
+
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=args.resume
+            cfg.MODEL.WEIGHTS,
+            resume=args.resume
         )
+
         res = MyTrainer.test(cfg, model)
+
         return res
 
     trainer = MyTrainer(cfg)
     trainer.resume_or_load(resume=args.resume)
+
     return trainer.train()
 
 
 if __name__ == "__main__":
+    #
     parser = default_argument_parser()
+
     parser.add_argument("--debug", action="store_true", help="enable debug mode")
+
     args = parser.parse_args()
+
     print("Command Line Args:", args)
 
     if args.debug:
+        #
         import debugpy
 
         print("Enabling attach starts.")

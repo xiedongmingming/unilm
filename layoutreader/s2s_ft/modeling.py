@@ -5,9 +5,12 @@ import math
 import os
 
 import torch
+
 from torch import nn
 from torch.nn.modules.loss import _Loss
+
 import torch.nn.functional as F
+
 from transformers import BertConfig
 
 from transformers.modeling_bert import \
@@ -60,10 +63,11 @@ class LayoutlmConfig(BertConfig):
 
 
 class BertPreTrainedForSeq2SeqModel(BertPreTrainedModel):
-    """ An abstract class to handle weights initialization and
-        a simple interface for dowloading and loading pretrained models.
+    """
+    An abstract class to handle weights initialization and a simple interface for dowloading and loading pretrained models.
     """
     config_class = BertForSeq2SeqConfig
+
     supported_convert_pretrained_model_archive_map = {
         "bert": BERT_PRETRAINED_MODEL_ARCHIVE_MAP,
         "roberta": ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP,
@@ -72,7 +76,9 @@ class BertPreTrainedForSeq2SeqModel(BertPreTrainedModel):
         "minilm": MINILM_PRETRAINED_MODEL_ARCHIVE_MAP,
         "layoutlm": LAYOUTLM_PRETRAINED_MODEL_ARCHIVE_MAP,
     }
+
     base_model_prefix = "bert_for_seq2seq"
+
     pretrained_model_archive_map = {
         **ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP,
         **XLM_ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP, 
@@ -83,15 +89,21 @@ class BertPreTrainedForSeq2SeqModel(BertPreTrainedModel):
     }
 
     def _init_weights(self, module):
-        """ Initialize the weights """
+        """
+        Initialize the weights
+        """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
             module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+
         elif isinstance(module, BertLayerNorm):
+
             module.bias.data.zero_()
             module.weight.data.fill_(1.0)
+
         if isinstance(module, nn.Linear) and module.bias is not None:
+
             module.bias.data.zero_()
 
     @classmethod
@@ -607,21 +619,26 @@ class LayoutlmModel(BertPreTrainedForSeq2SeqModel):
 
     """
     def __init__(self, config):
+
         super(LayoutlmModel, self).__init__(config)
+
         self.config = config
 
         self.embeddings = LayoutlmEmbeddings(config)
+
         self.encoder = BertEncoder(config)
 
-    def forward(self,
-                input_ids=None,
-                bbox=None,
-                attention_mask=None,
-                token_type_ids=None,
-                position_ids=None,
-                inputs_embeds=None,
-                split_lengths=None,
-                return_emb=False):
+    def forward(
+        self,
+        input_ids=None,
+        bbox=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        inputs_embeds=None,
+        split_lengths=None,
+        return_emb=False
+    ):
 
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
@@ -635,17 +652,20 @@ class LayoutlmModel(BertPreTrainedForSeq2SeqModel):
         device = input_ids.device if input_ids is not None else inputs_embeds.device
 
         if attention_mask is None:
+            #
             attention_mask = torch.ones(input_shape, device=device)
 
         # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
         # ourselves in which case we just need to make it broadcastable to all heads.
         if attention_mask.dim() == 3:
+            #
             extended_attention_mask = attention_mask[:, None, :, :]
 
         # Provided a padding mask of dimensions [batch_size, seq_length]
         # - if the model is a decoder, apply a causal mask in addition to the padding mask
         # - if the model is an encoder, make the mask broadcastable to [batch_size, num_heads, seq_length, seq_length]
         if attention_mask.dim() == 2:
+            #
             extended_attention_mask = attention_mask[:, None, None, :]
 
         # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
@@ -662,12 +682,15 @@ class LayoutlmModel(BertPreTrainedForSeq2SeqModel):
             input_ids, bbox, position_ids=position_ids, token_type_ids=token_type_ids
         )
         encoder_outputs = self.encoder(
-            embedding_output, attention_mask=extended_attention_mask, split_lengths=split_lengths)
+            embedding_output, attention_mask=extended_attention_mask, split_lengths=split_lengths
+        )
+
         sequence_output = encoder_outputs[0]
 
         outputs = (sequence_output, ) + encoder_outputs[1:]  # add hidden_states and attentions if they are here
 
         if return_emb:
+            #
             outputs += (embedding_output,)
 
         return outputs  # sequence_output, pooled_output, (hidden_states), (attentions)
@@ -681,19 +704,27 @@ class LabelSmoothingLoss(_Loss):
     """
 
     def __init__(self, label_smoothing=0, tgt_size=0, ignore_index=0, size_average=None, reduce=None, reduction='mean'):
+
         assert 0.0 < label_smoothing <= 1.0
+
         self.ignore_index = ignore_index
+
         super(LabelSmoothingLoss, self).__init__(
-            size_average=size_average, reduce=reduce, reduction=reduction)
+            size_average=size_average, reduce=reduce, reduction=reduction
+        )
 
         assert label_smoothing > 0
         assert tgt_size > 0
 
         smoothing_value = label_smoothing / (tgt_size - 2)
+
         one_hot = torch.full((tgt_size,), smoothing_value)
         one_hot[self.ignore_index] = 0
+
         self.register_buffer('one_hot', one_hot.unsqueeze(0))
+
         self.confidence = 1.0 - label_smoothing
+
         self.tgt_size = tgt_size
 
     def forward(self, output, target):
@@ -702,10 +733,15 @@ class LabelSmoothingLoss(_Loss):
         target (LongTensor): batch_size * num_pos
         """
         assert self.tgt_size == output.size(2)
+
         batch_size, num_pos = target.size(0), target.size(1)
+
         output = output.view(-1, self.tgt_size)
+
         target = target.view(-1)
+
         model_prob = self.one_hot.float().repeat(target.size(0), 1)
+
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
         model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
 
@@ -713,37 +749,54 @@ class LabelSmoothingLoss(_Loss):
 
 
 class LayoutlmSPLMPredictionHead(nn.Module):
+
     def __init__(self, config, src_len):
+
         super(LayoutlmSPLMPredictionHead, self).__init__()
+
         self.transform = BertPredictionHeadTransform(config)
 
         self.bias = nn.Parameter(torch.zeros(src_len))
 
     def forward(self, hidden_states, src_emb):
+
         hidden_states = self.transform(hidden_states)
+
         hidden_states = torch.einsum('btf,bsf->bts', hidden_states, src_emb) + self.bias
+
         # hidden_states = F.linear(hidden_states, weight=src_emb, bias=self.bias)
+
         return hidden_states
 
 
 class LayoutlmSPOnlyMLMHead(nn.Module):
+
     def __init__(self, config, src_len):
+
         super(LayoutlmSPOnlyMLMHead, self).__init__()
+
         self.predictions = LayoutlmSPLMPredictionHead(config, src_len=src_len)
 
     def forward(self, sequence_output, src_emb):
+
         prediction_scores = self.predictions(sequence_output, src_emb=src_emb)
+
         return prediction_scores
 
 
 class LayoutlmForSequenceToSequence(BertPreTrainedForSeq2SeqModel):
+
     def __init__(self, config):
+
         super(LayoutlmForSequenceToSequence, self).__init__(config)
+
         if config.base_model_type == 'layoutlm':
             self.bert = LayoutlmModel(config)
         else:
             self.bert = BertModel(config)
+
         self.cls = LayoutlmSPOnlyMLMHead(config, src_len=config.max_source_length)
+
         self.init_weights()
 
         self.log_softmax = nn.LogSoftmax()
@@ -753,66 +806,92 @@ class LayoutlmForSequenceToSequence(BertPreTrainedForSeq2SeqModel):
         self.target_type_id = config.target_type_id
 
         if config.label_smoothing > 0:
+
             self.crit_mask_lm_smoothed = LabelSmoothingLoss(
-                config.label_smoothing, config.max_source_length, ignore_index=0, reduction='none')
+                config.label_smoothing, config.max_source_length, ignore_index=0, reduction='none'
+            )
+
             self.crit_mask_lm = None
+
         else:
+
             self.crit_mask_lm_smoothed = None
             self.crit_mask_lm = nn.CrossEntropyLoss(reduction='none', ignore_index=0)
 
     @staticmethod
     def create_mask_and_position_ids(num_tokens, max_len, offset=None):
+
         base_position_matrix = torch.arange(
-            0, max_len, dtype=num_tokens.dtype, device=num_tokens.device).view(1, -1)
+            0, max_len, dtype=num_tokens.dtype, device=num_tokens.device
+        ).view(1, -1)
+
         mask = (base_position_matrix < num_tokens.view(-1, 1)).type_as(num_tokens)
+
         if offset is not None:
+
             base_position_matrix = base_position_matrix + offset.view(-1, 1)
+
         position_ids = base_position_matrix * mask
+
         return mask, position_ids
 
     @staticmethod
     def create_attention_mask(source_mask, target_mask, source_position_ids, target_span_ids):
+
         weight = torch.cat((torch.zeros_like(source_position_ids), target_span_ids, -target_span_ids), dim=1)
+
         from_weight = weight.unsqueeze(-1)
+
         to_weight = weight.unsqueeze(1)
 
         true_tokens = (0 <= to_weight) & (torch.cat((source_mask, target_mask, target_mask), dim=1) == 1).unsqueeze(1)
+
         true_tokens_mask = (from_weight >= 0) & true_tokens & (to_weight <= from_weight)
+
         pseudo_tokens_mask = (from_weight < 0) & true_tokens & (-to_weight > from_weight)
         pseudo_tokens_mask = pseudo_tokens_mask | ((from_weight < 0) & (to_weight == from_weight))
 
         return (true_tokens_mask | pseudo_tokens_mask).type_as(source_mask)
 
-    def forward(self, source_idxys, target_idxys, target_index, pseudo_idxys, num_source_tokens, num_target_tokens,
-                target_span_ids=None):
+    def forward(self, source_idxys, target_idxys, target_index, pseudo_idxys, num_source_tokens, num_target_tokens, target_span_ids=None):
+
         source_len = source_idxys.size(1)
         target_len = target_idxys.size(1)
         pseudo_len = pseudo_idxys.size(1)
+
         assert target_len == pseudo_len
         assert source_len > 0 and target_len > 0
+
         split_lengths = (source_len, target_len, pseudo_len)
 
         if self.config.base_model_type == 'layoutlm':
+
             source_xys = source_idxys[:, :, 1:]
             target_xys = target_idxys[:, :, 1:]
             pseudo_xys = pseudo_idxys[:, :, 1:]
+
             input_xys = torch.cat((source_xys, target_xys, pseudo_xys), dim=1)
 
             source_ids = source_idxys[:, :, 0]
             target_ids = target_idxys[:, :, 0]
             pseudo_ids = pseudo_idxys[:, :, 0]
+
         else:
+
             source_ids = source_idxys
             target_ids = target_idxys
             pseudo_ids = pseudo_idxys
+
             input_xys = None
 
         input_ids = torch.cat((source_ids, target_ids, pseudo_ids), dim=1)
 
         token_type_ids = torch.cat(
-            (torch.ones_like(source_ids) * self.source_type_id,
-             torch.ones_like(target_ids) * self.target_type_id,
-             torch.ones_like(pseudo_ids) * self.target_type_id), dim=1)
+            (
+                torch.ones_like(source_ids) * self.source_type_id,
+                torch.ones_like(target_ids) * self.target_type_id,
+                torch.ones_like(pseudo_ids) * self.target_type_id
+            ), dim=1)
 
         source_mask, source_position_ids = \
             self.create_mask_and_position_ids(num_source_tokens, source_len)
@@ -820,42 +899,72 @@ class LayoutlmForSequenceToSequence(BertPreTrainedForSeq2SeqModel):
             self.create_mask_and_position_ids(num_target_tokens, target_len, offset=num_source_tokens)
 
         position_ids = torch.cat((source_position_ids, target_position_ids, target_position_ids), dim=1)
+
         if target_span_ids is None:
+
             target_span_ids = target_position_ids
+
         attention_mask = self.create_attention_mask(source_mask, target_mask, source_position_ids, target_span_ids)
 
         if self.config.base_model_type == 'layoutlm':
+
             outputs = self.bert(
-                input_ids, input_xys, attention_mask=attention_mask, token_type_ids=token_type_ids,
-                position_ids=position_ids, split_lengths=split_lengths, return_emb=True)
+                input_ids,
+                input_xys,
+                attention_mask=attention_mask,
+                token_type_ids=token_type_ids,
+                position_ids=position_ids,
+                split_lengths=split_lengths,
+                return_emb=True
+            )
+
         else:
+
             outputs = self.bert(
-                input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids,
-                position_ids=position_ids, split_lengths=split_lengths, return_emb=True)
+                input_ids,
+                attention_mask=attention_mask,
+                token_type_ids=token_type_ids,
+                position_ids=position_ids,
+                split_lengths=split_lengths,
+                return_emb=True
+            )
 
         sequence_output = outputs[0]
+
         pseudo_sequence_output = sequence_output[:, source_len + target_len:, ]
 
         sequence_embedding = outputs[-1]
+
         source_embedding = sequence_embedding[:, :source_len, :]
 
         def loss_mask_and_normalize(loss, mask):
+
             mask = mask.type_as(loss)
+
             loss = loss * mask
+
             denominator = torch.sum(mask) + 1e-5
+
             return (loss / denominator).sum()
 
         # TODO: do we need to mask the impossible pos with the real input length
         prediction_scores_masked = self.cls(pseudo_sequence_output, source_embedding)
 
         if self.crit_mask_lm_smoothed:
+
             masked_lm_loss = self.crit_mask_lm_smoothed(
-                F.log_softmax(prediction_scores_masked.float(), dim=-1), target_index)
+                F.log_softmax(prediction_scores_masked.float(), dim=-1), target_index
+            )
+
         else:
+
             masked_lm_loss = self.crit_mask_lm(
-                prediction_scores_masked.transpose(1, 2).float(), target_index)
+                prediction_scores_masked.transpose(1, 2).float(), target_index
+            )
+
         pseudo_lm_loss = loss_mask_and_normalize(
-            masked_lm_loss.float(), target_mask)
+            masked_lm_loss.float(), target_mask
+        )
 
         return pseudo_lm_loss
 
