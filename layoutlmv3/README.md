@@ -11,7 +11,9 @@ conda create --name layoutlmv3 python=3.7
 conda activate layoutlmv3
 
 git clone https://github.com/microsoft/unilm.git
+
 cd unilm/layoutlmv3
+
 pip install -r requirements.txt
 
 # install pytorch, torchvision refer to https://pytorch.org/get-started/locally/
@@ -37,7 +39,8 @@ we provide some fine-tuned models and their train/test logs.
   ``` bash
   python -m torch.distributed.launch \
     --nproc_per_node=8 \
-    --master_port 4398 examples/run_funsd_cord.py \
+    --master_port 4398 \
+    examples/run_funsd_cord.py \
     --dataset_name funsd \
     --do_train \
     --do_eval \
@@ -59,7 +62,8 @@ we provide some fine-tuned models and their train/test logs.
   ``` bash
   python -m torch.distributed.launch \
     --nproc_per_node=8 \
-    --master_port 4398 examples/run_funsd_cord.py \
+    --master_port 4398 \
+    examples/run_funsd_cord.py \
     --dataset_name funsd \
     --do_eval \
     --model_name_or_path HYPJUDY/layoutlmv3-base-finetuned-funsd \
@@ -74,24 +78,63 @@ we provide some fine-tuned models and their train/test logs.
   | [layoutlmv3-base-finetuned-funsd](https://huggingface.co/HYPJUDY/layoutlmv3-base-finetuned-funsd)   |   0.8955  | 0.9165 |  0.9059  |
   | [layoutlmv3-large-finetuned-funsd](https://huggingface.co/HYPJUDY/layoutlmv3-large-finetuned-funsd) | 0.9219    | 0.9210 |  0.9215  |
 
+- BUG修复：按照上述步骤操作，执行训练时会报错
+
+  ```
+  ValueError: You must provide corresponding bounding boxes
+  ```
+
+  解决办法：GITHUB上的对应处理方法
+
+  ```
+  You can fix this by modifying the tokenize_and_align_labels in run_funds.py tested on transformers 4.30.2
+  
+  We provide each words/boxes/word_labels directly to the tokenizer.
+  
+      def tokenize_and_align_labels(examples, augmentation=False):
+          images = examples["image"]
+          words = examples["tokens"]
+          boxes = examples["bboxes"]
+          word_labels = examples["ner_tags"]
+          
+          tokenized_inputs = tokenizer(
+              text = words,
+              boxes= boxes,
+              word_labels=word_labels,
+              padding=False,
+              truncation=True,
+              return_overflowing_tokens=True,
+              # We use this argument because the texts in our dataset are lists of words (with a label for each word).
+              # is_split_into_words=True,
+          )
+      
+   ....  Continued  ....
+  ```
+
 ### document layout analysis on publaynet
+
 please follow [unilm/dit/object_detection](https://github.com/microsoft/unilm/blob/master/dit/object_detection/README.md) to prepare data and read more details about this task. in the folder of layoutlmv3/examples/object_detecion:
 
 * train
 
   please firstly download the [pre-trained models](#pre-trained-models) to `/path/to/microsoft/layoutlmv3-base`, then run:
   ``` bash
-  python train_net.py --config-file cascade_layoutlmv3.yaml --num-gpus 16 \
-          MODEL.WEIGHTS /path/to/microsoft/layoutlmv3-base/pytorch_model.bin \
-          OUTPUT_DIR /path/to/layoutlmv3-base-finetuned-publaynet
+  python train_net.py \
+  	--config-file cascade_layoutlmv3.yaml \
+  	--num-gpus 16 \
+      MODEL.WEIGHTS /path/to/microsoft/layoutlmv3-base/pytorch_model.bin \
+      OUTPUT_DIR /path/to/layoutlmv3-base-finetuned-publaynet
   ```
 * test 
 
   if you want to test the [layoutlmv3-base-finetuned-publaynet](https://huggingface.co/HYPJUDY/layoutlmv3-base-finetuned-publaynet) model, please download it to `/path/to/layoutlmv3-base-finetuned-publaynet`, then run:
   ``` bash
-  python train_net.py --config-file cascade_layoutlmv3.yaml --eval-only --num-gpus 8 \
-          MODEL.WEIGHTS /path/to/layoutlmv3-base-finetuned-publaynet/model_final.pth \
-          OUTPUT_DIR /path/to/layoutlmv3-base-finetuned-publaynet
+  python train_net.py \
+  	--config-file cascade_layoutlmv3.yaml \
+  	--eval-only \
+  	--num-gpus 8 \
+      MODEL.WEIGHTS /path/to/layoutlmv3-base-finetuned-publaynet/model_final.pth \
+      OUTPUT_DIR /path/to/layoutlmv3-base-finetuned-publaynet
   ```
   | model on publaynet                                                                                                | Text   | Title       |  List  | Table | Figure | Overall |
   |-------------------------------------------------------------------------------------------|:------------|:------:|:------:|-------|--------|---------|
@@ -115,7 +158,8 @@ the resulting directory structure looks like the following:
   ``` bash
     python -m torch.distributed.launch \
       --nproc_per_node=8 \
-      --master_port 4398 examples/run_xfund.py \
+      --master_port 4398 \
+      examples/run_xfund.py \
       --data_dir data \
       --language zh \
       --do_train --do_eval \
@@ -137,12 +181,17 @@ the resulting directory structure looks like the following:
 * test
   ``` bash
   python -m torch.distributed.launch \
-    --nproc_per_node=8 --master_port 4398 examples/run_xfund.py \
-    --data_dir data --language zh \
+    --nproc_per_node=8 \
+    --master_port 4398 \
+    examples/run_xfund.py \
+    --data_dir data \
+    --language zh \
     --do_eval \
     --model_name_or_path path/to/model \
     --output_dir /path/to/output \
-    --segment_level_layout 1 --visual_embed 1 --input_size 224 \
+    --segment_level_layout 1 \
+    --visual_embed 1 \
+    --input_size 224 \
     --dataloader_num_workers 8
   ```
   
